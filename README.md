@@ -17,13 +17,15 @@ See Wiki.
 
 Example jQuery Code
 -------------------
-    $.ajax("http://localhost:4567/rfid", {
-            dataType: "text",
-            success: function(rfid) {
-                console.log("Got RFID: " + rfid);
-            },
-            error: function() {
-                console.warn("Could not connect to RfidTap server");
-            },
-            jsonp: false
-    });
+```javascript
+$.ajax("http://localhost:4567/rfid", {
+        dataType: "text",
+        success: function(rfid) {
+            console.log("Got RFID: " + rfid);
+        },
+        error: function() {
+            console.warn("Could not connect to RfidTap server");
+        },
+        jsonp: false
+});
+```
