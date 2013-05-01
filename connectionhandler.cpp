@@ -44,16 +44,10 @@ void ConnectionHandler::handleConnection() {
     socket->write("HTTP/1.1 200 OK\n");
     socket->write("Content-Type: text/plain;\n");
     socket->write("Content-Length: 12\n");
-#ifdef Q_OS_WIN32
-    socket->write("Server: RfidTap/1.0 (Win32)\n");
-#endif
-#ifdef Q_OS_LINUX
-    socket->write("Server: RfidTap/1.0 (Linux)\n");
-#endif
+    socket->write("Server: RfidTap/1.0\n");
     socket->write("X-Powered-By: Qt/");
     socket->write(QT_VERSION_STR);
-    socket->write("\nAccess-Control-Allow-Origin: *\n");
-    socket->write("\n");
+    socket->write("\nAccess-Control-Allow-Origin: *\n\n");
     socket->flush();
 
     // Queue socket for awaiting RFID
@@ -72,6 +66,8 @@ void ConnectionHandler::broadcastData() {
     while (!sockets.empty()) {
         QTcpSocket *socket = sockets.dequeue();
         socket->write(rfid);
+        socket->flush();
         socket->close();
+        socket->deleteLater();
     }
 }
