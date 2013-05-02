@@ -22,7 +22,15 @@
  * THE SOFTWARE.
  ******************************************************************************/
 
+#define DEFAULT_TCP     4567
+#ifdef Q_OS_WIN32
+#define DEFAULT_TTY     "COM11"
+#else
+#define DEFAULT_TTY     "/dev/ttyUSB0"
+#endif
+
 #include <QCoreApplication>
+#include <QStringList>
 #include "connectionhandler.h"
 #include <QtNetwork/QTcpServer>
 #include <QtNetwork/QHostAddress>
@@ -33,18 +41,21 @@ int main(int argc, char *argv[])
     QCoreApplication a(argc, argv);
 
     // Determine serial port to use
-    QString *portName;
-    if (argc >= 2) {
-        portName = new QString(argv[1]);
+    QString portName(DEFAULT_TTY);
+    if (2 <= a.arguments().size()) {
+        portName = a.arguments().at(1);
     }
-    else {
-#ifdef Q_OS_LINUX
-        portName = new QString("/dev/ttyUSB0");
-#endif
-#ifdef Q_OS_WIN32
-        portName = new QString("COM11");
-#endif
+
+    // Determine TCP port to bind to
+    quint16 port = DEFAULT_TCP;
+    if (3 <= a.arguments().size()) {
+        bool ok;
+        quint16 possiblePort = a.arguments().at(2).toUInt(&ok);
+        if (ok) {
+            port = possiblePort;
+        }
     }
+
 
     // Connect to serial port (RFID USB adapter settings)
     PortSettings settings;
@@ -54,19 +65,21 @@ int main(int argc, char *argv[])
     settings.Parity = PAR_NONE;
     settings.StopBits = STOP_1;
     settings.Timeout_Millisec = 50;
-    QextSerialPort serial(*portName, settings, QextSerialPort::EventDriven);
+    QextSerialPort serial(portName, settings, QextSerialPort::EventDriven);
     if (!serial.open(QIODevice::ReadOnly)) {
-        qDebug() << "Could not connect to serial port" << *portName;
+        qDebug() << "Could not connect to serial port" << portName;
         return -1;
     }
 
     // Bind to port and start accepting connections
     QTcpServer server;
     ConnectionHandler handler(&serial, &server);
-    if (!server.listen(QHostAddress("127.0.0.1"), 4567)) {
-        qDebug() << "Error binding to 127.0.0.1:4567";
+    if (!server.listen(QHostAddress("127.0.0.1"), port)) {
+        qDebug().nospace() << "Error binding to 127.0.0.1:" << port;
         return -1;
     }
+
+    qDebug().nospace() << "Ready (TTY " << portName << "; port " << port << ")";
     
     return a.exec();
 }
