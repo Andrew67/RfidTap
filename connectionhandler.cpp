@@ -40,12 +40,17 @@ void ConnectionHandler::handleConnection() {
     qDebug() << "Accepting connection...";
     QTcpSocket *socket = server->nextPendingConnection();
 
+    // Error-handling cleanup
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)),
+            this, SLOT(socketError()));
+
     // Write HTTP header
     socket->write("HTTP/1.1 200 OK\n");
     socket->write("Content-Type: text/plain;\n");
     socket->write("Content-Length: 12\n");
-    socket->write("Server: RfidTap/1.0\n");
-    socket->write("X-Powered-By: Qt/");
+    socket->write("Server: RfidTap/");
+    socket->write(RFIDTAP_VERSION_STR);
+    socket->write("\nX-Powered-By: Qt/");
     socket->write(QT_VERSION_STR);
     socket->write("\nAccess-Control-Allow-Origin: *\n\n");
     socket->flush();
@@ -67,7 +72,16 @@ void ConnectionHandler::broadcastData() {
         QTcpSocket *socket = sockets.dequeue();
         socket->write(rfid);
         socket->flush();
+        qDebug() << "Closing socket";
         socket->close();
         socket->deleteLater();
     }
+}
+
+void ConnectionHandler::socketError() {
+    // Remove from queue and destroy sockets with errors
+    qDebug() << "Socket error; removing from queue";
+    QTcpSocket *socket = static_cast<QTcpSocket*>(sender());
+    sockets.removeOne(socket);
+    socket->deleteLater();
 }

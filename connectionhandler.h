@@ -25,6 +25,10 @@
 #ifndef CONNECTIONHANDLER_H
 #define CONNECTIONHANDLER_H
 
+#define RFIDTAP_MAJOR_VERSION   1
+#define RFIDTAP_MINOR_VERSION   1
+#define RFIDTAP_VERSION_STR     "1.1"
+
 #include <QObject>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -42,6 +46,9 @@ signals:
 public slots:
     void handleConnection();
     void broadcastData();
+
+private slots:
+    void socketError();
 
 private:
     QextSerialPort *serial;
